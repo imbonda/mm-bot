@@ -1,0 +1,61 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "[TS] Market Maker Service",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceRoot}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "src/main.ts",
+            "runtimeArgs": [
+                // Tell V8 to compile ahead of time so breakpoints work correctly.
+                "--nolazy",
+                // Ensure ts-node is loaded before trying to execute.
+                "--require",
+                "ts-node/register",
+                // Resolving tsconfig paths.
+                "--require",
+                "tsconfig-paths/register",
+            ],
+            "args": [],
+            "env": {
+                "NODE_ENV": "dev",
+            },
+            "sourceMaps": true,
+            "outputCapture": "std"
+        },
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "[TS] Current File",
+            "cwd": "${workspaceRoot}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${file}",
+            "runtimeArgs": [
+                // Tell V8 to compile ahead of time so breakpoints work correctly.
+                "--nolazy",
+                // Ensure ts-node is loaded before trying to execute.
+                "--require",
+                "ts-node/register",
+                // Resolving tsconfig paths.
+                "--require",
+                "tsconfig-paths/register"
+            ],
+            "args": [],
+            "env": {
+                "NODE_ENV": "dev"
+            },
+            "sourceMaps": true,
+            "outputCapture": "std"
+        },
+   ]
+}

@@ -1,0 +1,41 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "commonjs",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        },
+        "plugins": [
+            {
+                "transform": "typescript-transform-paths",
+                "useRootDirs": true,
+            },
+        ],
+        "outDir": "./dist",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "incremental": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false
+    },
+    "include": [
+        "src",
+        "tests"
+    ],
+    "exclude": [
+        "dist",
+        "node_modules"
+    ]
+}
