@@ -66,6 +66,7 @@ interface RawPendingOrder {
     price: string;
     side: string;
     status: string;
+    time: number;
 }
 
 interface RawPendingOrders {

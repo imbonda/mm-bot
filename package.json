@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "start": "ts-node -r tsconfig-paths/register src/main.ts"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.17",

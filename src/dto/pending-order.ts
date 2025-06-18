@@ -21,6 +21,8 @@ export class PendingOrder {
 
     public filledAmount: number;
 
+    public time: number;
+
     constructor(order: IPendingOrder) {
         this.orderId = order.orderId;
         this.clientOrderId = order.clientOrderId;
@@ -31,6 +33,7 @@ export class PendingOrder {
         this.price = parseFloat(order.price);
         this.origAmount = parseFloat(order.origAmount);
         this.filledAmount = parseFloat(order.filledAmount);
+        this.time = order.time;
     }
 
     public isPriceInRange(range: [number, number]): boolean {

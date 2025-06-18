@@ -43,6 +43,7 @@ export interface PendingOrder {
     price: string;
     origAmount: string;
     filledAmount: string;
+    time: number;
 }
 
 export interface Credentials {

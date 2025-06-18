@@ -1,15 +1,18 @@
 // Internal.
 import { Order } from '@/@types';
 import { exchangeConfig, tradingConfig } from '@/config';
-import { PendingOrder } from '@/dto';
+import { AccountBalance, PendingOrder, Ticker } from '@/dto';
 import { OrderSide, OrderType } from '@/dto/order';
 import { BingXClient, parseSymbol } from '@/exchanges/bingx';
 import { BybitClient } from '@/exchanges/bybit';
+import { HOUR_MS } from '@/lib/constants';
 import { safe } from '@/lib/decorators';
 import { getRandomInRange, randomSplit } from '@/lib/utils/utils';
 import { Service } from '@/services/service';
 
 export class SpreadMarketMaker extends Service {
+    private static OLD_ORDER_THRESHOLD = 2 * HOUR_MS;
+
     private bybit: BybitClient;
 
     private bingx: BingXClient;
@@ -24,7 +27,9 @@ export class SpreadMarketMaker extends Service {
 
     private highEndSpread: number;
 
-    private minTradeValue: number;
+    private minBaseAssetTradeAmount: number;
+
+    private minQuoteAssetTradeAmount: number;
 
     private baseAssetBudgetRatio: number;
 
@@ -49,7 +54,8 @@ export class SpreadMarketMaker extends Service {
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
         this.lowEndSpread = tradingConfig.LOW_END_SPREAD;
         this.highEndSpread = tradingConfig.HIGH_END_SPREAD;
-        this.minTradeValue = tradingConfig.MIN_TRADE_VALUE;
+        this.minBaseAssetTradeAmount = tradingConfig.MIN_BASE_ASSET_AMOUNT;
+        this.minQuoteAssetTradeAmount = tradingConfig.MIN_QUOTE_ASSET_AMOUNT;
         this.baseAssetBudgetRatio = tradingConfig.BASE_ASSET_BUDGET_RATIO;
         this.quoteAssetBudgetRatio = tradingConfig.QUOTE_ASSET_BUDGET_RATIO;
         this.updateIntervalMs = tradingConfig.UPDATE_INTERVAL_MS;
@@ -72,8 +78,6 @@ export class SpreadMarketMaker extends Service {
     }
 
     public async fixSpread(): Promise<void> {
-        this.logger.info('starting to fix spread');
-
         const [
             oracleTicker,
             openOrders,
@@ -84,6 +88,24 @@ export class SpreadMarketMaker extends Service {
             this.bingx.getAccountBalance(),
         ]);
 
+        const hasOldOrders = !!openOrders.find(
+            (order) => Date.now() - order.time > SpreadMarketMaker.OLD_ORDER_THRESHOLD,
+        );
+        if (hasOldOrders) {
+            await this.bingx.canceAllOrders(this.bingxPairSymbol);
+            // Clear dangling orders and retry.
+            await this.fixSpread();
+        } else {
+            await this._fixSpread(oracleTicker, openOrders, accountBalance);
+        }
+    }
+
+    public async _fixSpread(
+        oracleTicker: Ticker,
+        openOrders: PendingOrder[],
+        accountBalance: AccountBalance,
+    ): Promise<void> {
+        this.logger.info('starting to fix spread');
         this.logger.info('Account balance', accountBalance.balances);
 
         const { base, quote } = parseSymbol(this.bingxPairSymbol);
@@ -97,11 +119,23 @@ export class SpreadMarketMaker extends Service {
         const {
             newOrders: newAskOrders,
             removeOrders: removeAskOrders,
-        } = this.getOrderBookFixes(targetPrice, baseAssetBudget, OrderSide.ASK, openAsks);
+        } = this.getOrderBookFixes(
+            targetPrice,
+            baseAssetBudget,
+            this.minBaseAssetTradeAmount,
+            OrderSide.ASK,
+            openAsks,
+        );
         const {
             newOrders: newBidOrders,
             removeOrders: removeBidOrders,
-        } = this.getOrderBookFixes(targetPrice, quoteAssetBudget, OrderSide.BID, openBids);
+        } = this.getOrderBookFixes(
+            targetPrice,
+            quoteAssetBudget,
+            this.minQuoteAssetTradeAmount,
+            OrderSide.BID,
+            openBids,
+        );
 
         await Promise.all([
             this.bingx.cancelMultipleOrders([...removeAskOrders, ...removeBidOrders]),
@@ -114,6 +148,7 @@ export class SpreadMarketMaker extends Service {
     private getOrderBookFixes(
         targetPrice: number,
         budget: number,
+        minAmount: number,
         side: OrderSide,
         orders: PendingOrder[],
     ): { newOrders: Order[]; removeOrders: PendingOrder[] } {
@@ -134,7 +169,7 @@ export class SpreadMarketMaker extends Service {
 
         // Generate new orders.
         const newOrders: Order[] = [];
-        const newOrdersAmounts = randomSplit(budget, newOrdersPrices.length, this.minTradeValue);
+        const newOrdersAmounts = randomSplit(budget, newOrdersPrices.length, minAmount);
         newOrdersAmounts.forEach((amount, index) => {
             const price = newOrdersPrices[index];
             newOrders.push({
