@@ -8,6 +8,12 @@ import { TimeoutError } from '@/lib/errors';
 // 3rd party.
 export { isEmpty } from 'lodash';
 
+export async function sleep(timeMs: number): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(resolve, timeMs);
+    });
+}
+
 export async function withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
@@ -56,4 +62,40 @@ export function createUUID(length = 32): string {
     return uuidv4()
         .replace(/-/g, '') // Remove dashes.
         .slice(0, length);
+}
+
+export function getRandomInRange(start: number, end: number) {
+    return Math.random() * (end - start) + start;
+}
+
+export function randomSplit(amount: number, n: number, min: number = 0): number[] {
+    if (amount <= 0) {
+        return [];
+    }
+
+    while (n > 0) {
+        if (min * n <= amount) {
+            const remaining = amount - min * n;
+
+            const cuts = Array
+                .from(
+                    { length: n - 1 },
+                    () => Math.random() * remaining,
+                ).sort((a, b) => a - b);
+
+            const parts = [];
+            let prev = 0;
+            cuts.forEach((cut) => {
+                parts.push(cut - prev);
+                prev = cut;
+            });
+            parts.push(remaining - prev);
+
+            return parts.map((p) => p + min);
+        }
+
+        n -= 1;
+    }
+
+    return [];
 }

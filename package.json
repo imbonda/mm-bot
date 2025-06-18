@@ -14,6 +14,7 @@
     "typescript-transform-paths": "^3.5.5"
   },
   "dependencies": {
+    "bottleneck": "^2.19.5",
     "bybit-api": "^4.1.10",
     "dotenv": "^16.5.0",
     "lodash": "^4.17.21",

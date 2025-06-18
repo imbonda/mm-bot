@@ -5,6 +5,7 @@ import type {
 import {
     AccountBalance, OrderBook, PendingOrder, Ticker,
 } from '@/dto';
+import { throttle } from '@/lib/decorators';
 import { ContentType, HTTPHeaders, HTTPMethod } from '@/lib/http';
 import { Logger } from '@/lib/logger';
 import { createUUID, encodeURLParams, withTimeout } from '@/lib/utils/utils';
@@ -61,6 +62,7 @@ interface RawPendingOrder {
     clientOrderID: string;
     type: string;
     origQty: string;
+    executedQty: string;
     price: string;
     side: string;
     status: string;
@@ -85,13 +87,18 @@ enum Path {
     ORDER = '/trade/order',
     BATCH_ORDERS = '/trade/batchOrders',
     CANCEL_ORDER = '/trade/cancel',
-    BATCH_CANCEL = '/trade/cancelOrders',
+    BATCH_CANCEL_ORDERS = '/trade/cancelOrders',
+    CANCEL_ALL_ORDERS = '/trade/cancelOpenOrders'
 }
 
 export class BingXClient {
     private static API_BASE_URL = 'https://open-api.bingx.com';
 
     private static API_V1_URL = `${BingXClient.API_BASE_URL}/openApi/spot/v1`;
+
+    private static RATE_LIMIT_REQ_PER_TIMEFRAME = 100;
+
+    private static RATE_LIMIT_TIMEFRAME_MS = 10_000;
 
     private creds: Credentials;
 
@@ -135,6 +142,8 @@ export class BingXClient {
         return orders.map((order) => new PendingOrder({
             ...order,
             clientOrderId: order.clientOrderID,
+            origAmount: order.origQty,
+            filledAmount: order.executedQty,
         }));
     }
 
@@ -158,21 +167,46 @@ export class BingXClient {
             HTTPMethod.POST,
             path,
             encodeURLParams({
-                type: 'LIMIT',
+                type: order.type,
                 symbol: order.symbol,
                 side: order.side,
                 quantity: order.amount,
                 price: order.price,
                 newClientOrderId: createUUID(),
+                timeInForce: 'GTC',
             }),
         );
         return new PendingOrder({
             ...res.data,
             clientOrderId: res.data.clientOrderID,
+            origAmount: res.data.origQty,
+            filledAmount: res.data.executedQty,
         });
     }
 
-    public async placeMultipleOrders(orders: Order[]): Promise<PendingOrder[]> {
+    public async placeMultipleOrders(
+        orders: Order[],
+        batch: boolean = false,
+    ): Promise<PendingOrder[]> {
+        if (orders.length === 1) {
+            const pendinOrder = await this.placeOrder(orders[0]);
+            return [pendinOrder];
+        }
+        if (!batch) {
+            const settled = await Promise.allSettled<PendingOrder>(
+                orders.map(this.placeOrder.bind(this)),
+            );
+            const pendinOrders: PendingOrder[] = [];
+            const failed: Order[] = [];
+            settled.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    pendinOrders.push(result.value);
+                } else {
+                    failed.push(orders[index]);
+                }
+            });
+            return pendinOrders;
+        }
         const path = Path.BATCH_ORDERS;
         const res = await this.send<RawPendingOrders>(
             HTTPMethod.POST,
@@ -180,7 +214,7 @@ export class BingXClient {
             encodeURLParams({
                 data: JSON.stringify(
                     orders.map((order) => ({
-                        type: 'LIMIT',
+                        type: order.type,
                         symbol: order.symbol,
                         side: order.side,
                         quantity: order.amount,
@@ -194,6 +228,8 @@ export class BingXClient {
         return pending.map((order) => new PendingOrder({
             ...order,
             clientOrderId: order.clientOrderID,
+            origAmount: order.origQty,
+            filledAmount: order.executedQty,
         }));
     }
 
@@ -204,24 +240,48 @@ export class BingXClient {
             path,
             encodeURLParams({
                 symbol: order.symbol,
-                orderId: order.orderId,
+                clientOrderID: order.clientOrderId,
             }),
         );
     }
 
-    public async cancelMultipleOrders(orders: PendingOrder[]): Promise<void> {
+    public async cancelMultipleOrders(
+        orders: PendingOrder[],
+        batch: boolean = false,
+    ): Promise<void> {
         if (orders.length === 1) {
             await this.cancelOrder(orders[0]);
             return;
         }
-        const path = Path.BATCH_CANCEL;
+        if (!batch) {
+            const settled = await Promise.allSettled(
+                orders.map(this.cancelOrder.bind(this)),
+            );
+            const failed: PendingOrder[] = [];
+            settled.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    failed.push(orders[index]);
+                }
+            });
+            return;
+        }
+        const path = Path.BATCH_CANCEL_ORDERS;
         await this.send(
             HTTPMethod.POST,
             path,
             encodeURLParams({
-                orderIds: orders.map((order) => order.orderId).join(','),
                 symbol: orders[0].symbol,
+                clientOrderIDs: orders.map((order) => order.clientOrderId).join(','),
             }),
+        );
+    }
+
+    public async canceAllOrders(symbol: string): Promise<void> {
+        const path = Path.CANCEL_ALL_ORDERS;
+        await this.send(
+            HTTPMethod.POST,
+            path,
+            encodeURLParams({ symbol }),
         );
     }
 
@@ -255,6 +315,12 @@ export class BingXClient {
         return lastTicker;
     }
 
+    @throttle({
+        // eslint-disable-next-line no-use-before-define
+        maxInTimeFrame: BingXClient.RATE_LIMIT_REQ_PER_TIMEFRAME,
+        // eslint-disable-next-line no-use-before-define
+        timeFrameMs: BingXClient.RATE_LIMIT_TIMEFRAME_MS,
+    })
     private async send<T>(
         method: HTTPMethod,
         path: string,
@@ -275,7 +341,7 @@ export class BingXClient {
         );
         const request: Promise<Response> = fetch(url, reqInit);
         const res = await withTimeout(request, this.timeout);
-        this.logger.debug('Response headers', res.headers);
+        this.logger.debug('Response headers', { path, headers: res.headers });
         const json = await res.json();
         this.validate(json);
         return json as APIResponseWithData<T>;

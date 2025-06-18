@@ -4,22 +4,31 @@ import { AccountBalance as IAccountBalance } from '@/@types';
 interface AssetBalance {
     free: number;
     locked: number;
+    total: number;
 }
 
 export class AccountBalance {
-    private balances: Record<string, AssetBalance>;
+    private _balances: Record<string, AssetBalance>;
 
     constructor(accountBalance: IAccountBalance) {
-        this.balances = {};
+        this._balances = {};
         accountBalance.balances?.forEach(({ asset, free, locked }) => {
-            this.balances[asset] = {
-                free: parseFloat(free),
-                locked: parseFloat(locked),
+            const freeBalance = parseFloat(free);
+            const lockedBalance = parseFloat(locked);
+            const totalBalance = freeBalance + lockedBalance;
+            this._balances[asset] = {
+                free: freeBalance,
+                locked: lockedBalance,
+                total: totalBalance,
             };
         });
     }
 
+    public get balances(): Record<string, AssetBalance> {
+        return this._balances;
+    }
+
     public getBalance(asset: string): AssetBalance {
-        return this.balances[asset];
+        return this._balances[asset];
     }
 }

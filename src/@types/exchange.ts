@@ -21,17 +21,28 @@ export interface Ticker {
 
 export type OrderSide = string;
 
+export type OrderType = string;
+
+export type OrderStatus = string;
+
 export interface Order {
     symbol: string;
     price: number;
     amount: number;
     side: OrderSide;
+    type: OrderType;
 }
 
 export interface PendingOrder {
     symbol: string;
     orderId: number;
     clientOrderId: string;
+    side: OrderSide;
+    type: OrderType;
+    status: OrderStatus;
+    price: string;
+    origAmount: string;
+    filledAmount: string;
 }
 
 export interface Credentials {

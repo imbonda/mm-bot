@@ -49,6 +49,12 @@ export const tradingConfig = {
     SYMBOL: process.env.SYMBOL,
     ORACLE_SYMBOL: process.env.ORACLE_SYMBOL,
     ORDER_BOOK_DEPTH: parseInt(process.env.ORDER_BOOK_DEPTH!),
+    LOW_END_SPREAD: parseFloat(process.env.MARKET_MAKER_LOW_END_SPREAD!),
+    HIGH_END_SPREAD: parseFloat(process.env.MARKET_MAKER_HIGH_END_SPREAD!),
+    MIN_TRADE_VALUE: parseFloat(process.env.MARKET_MAKER_MIN_TRADE_VALUE!),
+    BASE_ASSET_BUDGET_RATIO: parseFloat(process.env.MARKET_MAKER_BASE_ASSET_BUDGET_RATIO!),
+    QUOTE_ASSET_BUDGET_RATIO: parseFloat(process.env.MARKET_MAKER_QUOTE_ASSET_BUDGET_RATIO!),
+    UPDATE_INTERVAL_MS: parseInt(process.env.MARKET_MAKER_INTERVAL_MS!),
 };
 
 /**
