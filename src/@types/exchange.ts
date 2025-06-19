@@ -35,7 +35,7 @@ export interface Order {
 
 export interface PendingOrder {
     symbol: string;
-    orderId: number;
+    orderId: string;
     clientOrderId: string;
     side: OrderSide;
     type: OrderType;

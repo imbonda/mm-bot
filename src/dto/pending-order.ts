@@ -3,7 +3,7 @@ import type { PendingOrder as IPendingOrder } from '@/@types';
 import { OrderSide, OrderStatus, OrderType } from '@/dto/order';
 
 export class PendingOrder {
-    public orderId: number;
+    public orderId: string;
 
     public clientOrderId: string;
 

@@ -1,3 +1,5 @@
+// 3rd party
+import axios, { AxiosRequestConfig } from 'axios';
 // Internal.
 import type {
     ClientOptions, Credentials, Order,
@@ -58,7 +60,7 @@ interface RawPriceTicker {
 
 interface RawPendingOrder {
     symbol: string;
-    orderId: number;
+    orderId: string;
     clientOrderID: string;
     type: string;
     origQty: string;
@@ -241,7 +243,7 @@ export class BingXClient {
             path,
             encodeURLParams({
                 symbol: order.symbol,
-                clientOrderID: order.clientOrderId,
+                orderId: order.orderId,
             }),
         );
     }
@@ -272,7 +274,7 @@ export class BingXClient {
             path,
             encodeURLParams({
                 symbol: orders[0].symbol,
-                clientOrderIDs: orders.map((order) => order.clientOrderId).join(','),
+                orderIds: orders.map((order) => order.orderId).join(','),
             }),
         );
     }
@@ -340,10 +342,24 @@ export class BingXClient {
             this.creds,
             forceAuth,
         );
-        const request: Promise<Response> = fetch(url, reqInit);
+        const request = axios({
+            url,
+            ...reqInit,
+
+            /**
+             * @important Fixing "orderId" precission issue.
+             */
+            transformResponse: (res) => {
+                if (res.includes('"orderId"')) {
+                    // Replace large orderId numbers with quoted strings
+                    res = res.replace(/"orderId":\s*(\d{16,})/g, '"orderId":"$1"');
+                }
+                return res;
+            },
+        } as AxiosRequestConfig);
         const res = await withTimeout(request, this.timeout);
         this.logger.debug('Response headers', { path, headers: res.headers });
-        const json = await res.json();
+        const json = JSON.parse(res.data);
         this.validate(json);
         return json as APIResponseWithData<T>;
     }

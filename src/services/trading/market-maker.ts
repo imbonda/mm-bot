@@ -5,14 +5,11 @@ import { AccountBalance, PendingOrder, Ticker } from '@/dto';
 import { OrderSide, OrderType } from '@/dto/order';
 import { BingXClient, parseSymbol } from '@/exchanges/bingx';
 import { BybitClient } from '@/exchanges/bybit';
-import { HOUR_MS } from '@/lib/constants';
 import { safe } from '@/lib/decorators';
 import { getRandomInRange, randomSplit } from '@/lib/utils/utils';
 import { Service } from '@/services/service';
 
 export class SpreadMarketMaker extends Service {
-    private static OLD_ORDER_THRESHOLD = 2 * HOUR_MS;
-
     private bybit: BybitClient;
 
     private bingx: BingXClient;
@@ -88,16 +85,7 @@ export class SpreadMarketMaker extends Service {
             this.bingx.getAccountBalance(),
         ]);
 
-        const hasOldOrders = !!openOrders.find(
-            (order) => Date.now() - order.time > SpreadMarketMaker.OLD_ORDER_THRESHOLD,
-        );
-        if (hasOldOrders) {
-            await this.bingx.canceAllOrders(this.bingxPairSymbol);
-            // Clear dangling orders and retry.
-            await this.fixSpread();
-        } else {
-            await this._fixSpread(oracleTicker, openOrders, accountBalance);
-        }
+        await this._fixSpread(oracleTicker, openOrders, accountBalance);
     }
 
     public async _fixSpread(
