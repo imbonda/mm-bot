@@ -1,0 +1,45 @@
+version: '3.9'
+
+x-prod-env-variables: &prod-env-variables
+  LOGGER_LEVEL: info
+
+x-smm-bot: &smm-bot-service
+  deploy:
+    replicas: 1
+  env_file:
+    - .env
+  logging:
+    driver: json-file
+    options:
+      max-size: 100m
+      max-file: 1
+  image: smm-bot:1.0.0
+  restart: unless-stopped
+
+services:
+  bingx-smm-bot:
+    <<: *smm-bot-service
+    environment:
+      <<: *prod-env-variables
+      SERVICE_NAME: bingx-smm-bot
+      EXCHANGE_NAME: bingx
+      ORACLE_EXCHANGE_NAME: bybit
+      SYMBOL: STOP-USDT
+      ORACLE_SYMBOL: STOPUSDT
+      ORDER_BOOK_DEPTH: 10
+      MARKET_MAKER_LOW_END_SPREAD: 0.002
+      MARKET_MAKER_HIGH_END_SPREAD: 0.1
+      MARKET_MAKER_MIN_BASE_ASSET_TRADE_AMOUNT: 20
+      MARKET_MAKER_MIN_QUOTE_ASSET_TRADE_AMOUNT: 1
+      MARKET_MAKER_BASE_ASSET_BUDGET_RATIO: 0.2
+      MARKET_MAKER_QUOTE_ASSET_BUDGET_RATIO: 0.2
+      MARKET_MAKER_INTERVAL_MS: 30000
+    build:
+      # Note:
+      # The image is built only once by running "docker compose build".
+      # The image is then referred by other services via the name tag. 
+      context: .
+      dockerfile: Dockerfile
+    container_name: bingx-smm-bot
+    command: >
+      node ./dist/main.js
