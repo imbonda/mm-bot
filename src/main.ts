@@ -2,7 +2,7 @@
 import { validateConfig } from '@/config';
 import { Logger } from '@/lib/logger';
 import { Service } from '@/services/service';
-import { SpreadMarketMaker } from '@/services';
+import { MarketMaker } from '@/services';
 
 class Launcher {
     private isTerminated: boolean;
@@ -21,7 +21,7 @@ class Launcher {
             return this._service;
         }
         // Create service instance.
-        this._service = new SpreadMarketMaker();
+        this._service = new MarketMaker();
         return this._service;
     }
 

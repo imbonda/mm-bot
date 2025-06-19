@@ -115,6 +115,12 @@ export class BingXClient {
         this.logger = new Logger(this.constructor.name);
     }
 
+    // eslint-disable-next-line class-methods-use-this
+    public parseSymbol(symbol: string): { base: string; quote: string;} {
+        const [base, quote] = symbol.split('-');
+        return { base, quote };
+    }
+
     public async getAccountBalance(): Promise<AccountBalance> {
         const path = Path.ACCOUNT_BALANCE;
         const res = await this.send<RawAccountBalance>(HTTPMethod.GET, path, null, true);
