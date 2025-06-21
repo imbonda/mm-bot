@@ -2,16 +2,19 @@
 import { tradingConfig } from '@/config';
 import { safe } from '@/lib/decorators';
 import { Service } from '@/services/service';
-import { SpreadTrader } from '@/traders';
+import { SpreadTrader, VolumeTrader } from '@/traders';
 
 export class MarketMaker extends Service {
     private spreadTrader: SpreadTrader;
+
+    private volumeTrader: VolumeTrader;
 
     private updateIntervalMs: number;
 
     constructor() {
         super();
         this.spreadTrader = new SpreadTrader();
+        this.volumeTrader = new VolumeTrader();
         this.updateIntervalMs = tradingConfig.UPDATE_INTERVAL_MS;
     }
 
@@ -28,6 +31,7 @@ export class MarketMaker extends Service {
 
     @safe({ silent: false })
     protected async run(): Promise<void> {
+        await this.volumeTrader.addVolume();
         await this.spreadTrader.fixSpread();
     }
 }

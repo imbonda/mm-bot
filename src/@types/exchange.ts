@@ -27,8 +27,8 @@ export type OrderStatus = string;
 
 export interface Order {
     symbol: string;
-    price: number;
-    amount: number;
+    price: string;
+    amount: string;
     side: OrderSide;
     type: OrderType;
 }

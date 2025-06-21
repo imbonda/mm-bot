@@ -14,9 +14,13 @@ export class SpreadTrader extends Trader {
 
     private orderBookDepth: number;
 
-    private lowEndSpread: number;
+    private amountDecimals: number;
 
-    private highEndSpread: number;
+    private priceDecimals: number;
+
+    private spreadLowEnd: number;
+
+    private spreadHighEnd: number;
 
     private minBaseAssetTradeAmount: number;
 
@@ -31,12 +35,14 @@ export class SpreadTrader extends Trader {
         this.bybitPairSymbol = tradingConfig.ORACLE_SYMBOL;
         this.bingxPairSymbol = tradingConfig.SYMBOL;
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
-        this.lowEndSpread = tradingConfig.LOW_END_SPREAD;
-        this.highEndSpread = tradingConfig.HIGH_END_SPREAD;
-        this.minBaseAssetTradeAmount = tradingConfig.MIN_BASE_ASSET_AMOUNT;
-        this.minQuoteAssetTradeAmount = tradingConfig.MIN_QUOTE_ASSET_AMOUNT;
-        this.baseAssetBudgetRatio = tradingConfig.BASE_ASSET_BUDGET_RATIO;
-        this.quoteAssetBudgetRatio = tradingConfig.QUOTE_ASSET_BUDGET_RATIO;
+        this.amountDecimals = tradingConfig.AMOUNT_DECIMALS;
+        this.priceDecimals = tradingConfig.PRICE_DECIMALS;
+        this.spreadLowEnd = tradingConfig.SPREAD_LOW_END;
+        this.spreadHighEnd = tradingConfig.SPREAD_HIGH_END;
+        this.minBaseAssetTradeAmount = tradingConfig.SPREAD_MIN_BASE_AMOUNT;
+        this.minQuoteAssetTradeAmount = tradingConfig.SPREAD_MIN_QUOTE_AMOUNT;
+        this.baseAssetBudgetRatio = tradingConfig.SPREAD_BASE_BUDGET_RATIO;
+        this.quoteAssetBudgetRatio = tradingConfig.SPREAD_QUOTE_BUDGET_RATIO;
     }
 
     public async fixSpread(): Promise<void> {
@@ -127,8 +133,8 @@ export class SpreadTrader extends Trader {
             const price = newOrdersPrices[index];
             newOrders.push({
                 symbol: this.bingxPairSymbol,
-                price,
-                amount,
+                price: price.toFixed(this.priceDecimals),
+                amount: amount.toFixed(this.amountDecimals),
                 side,
                 type: OrderType.LIMIT,
             });
@@ -143,8 +149,8 @@ export class SpreadTrader extends Trader {
         side: OrderSide,
     ): [number, number][] {
         const sign: number = (side === OrderSide.ASK) ? 1 : -1;
-        const lowEnd = basePrice * (1 + sign * (this.lowEndSpread / 2));
-        const highEnd = basePrice * (1 + sign * (this.highEndSpread / 2));
+        const lowEnd = basePrice * (1 + sign * (this.spreadLowEnd / 2));
+        const highEnd = basePrice * (1 + sign * (this.spreadHighEnd / 2));
         const rangeSize = Math.abs(highEnd - lowEnd) / numOrders;
         const ranges: [number, number][] = Array.from({ length: numOrders }, (_, i) => {
             const low = lowEnd + sign * rangeSize * i;

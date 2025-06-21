@@ -7,7 +7,7 @@ FROM node:18-alpine AS builder
 RUN apk add --no-cache rsync
 
 # Set working directory.
-WORKDIR /smm-bot
+WORKDIR /mm-bot
 
 # Install dependencies.
 COPY package*.json ./
@@ -26,11 +26,11 @@ RUN npm run build
 FROM node:18-alpine
 
 # Set working directory.
-WORKDIR /smm-bot
+WORKDIR /mm-bot
 
 # Copy production dependencies.
-COPY --from=builder /smm-bot/package*.json ./
+COPY --from=builder /mm-bot/package*.json ./
 RUN npm ci --production
 
 # Copy built TypeScript code.
-COPY --from=builder /smm-bot/dist ./dist
+COPY --from=builder /mm-bot/dist ./dist

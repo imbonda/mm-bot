@@ -1,2 +1,2 @@
-# smm-bot
-Spread Market Maker Bot 
+# mm-bot
+Market Maker Bot 
