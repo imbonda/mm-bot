@@ -8,9 +8,9 @@ export class OrderBook {
 
     public bids: [number, number][];
 
-    public bestAsk: [number, number];
+    public bestAsk?: [number, number];
 
-    public bestBid: [number, number];
+    public bestBid?: [number, number];
 
     constructor(orderbook: IOrderBook) {
         this.symbol = orderbook.symbol;

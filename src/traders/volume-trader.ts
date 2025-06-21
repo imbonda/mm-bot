@@ -1,13 +1,15 @@
 // Internal.
 import { tradingConfig } from '@/config';
-import { OrderBook } from '@/dto';
+import { OrderBook, Ticker } from '@/dto';
 import { OrderSide, OrderType } from '@/dto/order';
-import { exchange } from '@/lib/exchanges';
+import { exchange, oracle } from '@/lib/exchanges';
 import { getRandomInRange } from '@/lib/utils/utils';
 import { Trader } from '@/traders/trader';
 
 export class VolumeTrader extends Trader {
     private symbol: string;
+
+    private oracleSymbol: string;
 
     private orderBookDepth: number;
 
@@ -23,9 +25,12 @@ export class VolumeTrader extends Trader {
 
     private priceMarginUpper: number;
 
+    private priceCandleHeight: number;
+
     constructor() {
         super();
         this.symbol = tradingConfig.SYMBOL;
+        this.oracleSymbol = tradingConfig.ORACLE_SYMBOL;
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
         this.amountDecimals = tradingConfig.AMOUNT_DECIMALS;
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
@@ -33,20 +38,30 @@ export class VolumeTrader extends Trader {
         this.maxTradeAmount = tradingConfig.VOLUME_MAX_AMOUNT;
         this.priceMarginLower = tradingConfig.VOLUME_PRICE_LOWER;
         this.priceMarginUpper = tradingConfig.VOLUME_PRICE_UPPER;
+        this.priceCandleHeight = tradingConfig.VOLUME_PRICE_CANDLE_HEIGHT;
     }
 
     public async addVolume(): Promise<void> {
-        const orderBook = await exchange.getOrderBook(this.symbol, this.orderBookDepth);
-        await this._addVolume(orderBook);
+        const [
+            oracleTicker,
+            orderBook,
+        ] = await Promise.all([
+            oracle.getLastTicker(this.oracleSymbol),
+            exchange.getOrderBook(this.symbol, this.orderBookDepth),
+        ]);
+        await this._addVolume(oracleTicker, orderBook);
     }
 
     private async _addVolume(
+        oracleTicker: Ticker,
         orderBook: OrderBook,
     ): Promise<void> {
         this.logger.info('starting to add volume');
 
-        const [askPrice] = orderBook.bestAsk;
-        const [bidPrice] = orderBook.bestBid;
+        let [askPrice] = orderBook.bestAsk ?? [0];
+        let [bidPrice] = orderBook.bestBid ?? [0];
+        askPrice ||= Math.max(bidPrice, oracleTicker.lastPrice) * (1 + this.priceCandleHeight / 2);
+        bidPrice ||= Math.max(0, oracleTicker.lastPrice) * (1 - this.priceCandleHeight / 2);
         const lowerPrice = bidPrice + (askPrice - bidPrice) * this.priceMarginLower;
         const upperPrice = bidPrice + (askPrice - bidPrice) * this.priceMarginUpper;
         const orderPrice = getRandomInRange(lowerPrice, upperPrice);

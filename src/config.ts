@@ -61,6 +61,7 @@ export const tradingConfig = {
     VOLUME_MAX_AMOUNT: parseInt(process.env.VOLUME_MAX_TRADE_AMOUNT!),
     VOLUME_PRICE_LOWER: parseFloat(process.env.VOLUME_PRICE_MARGIN_LOWER!),
     VOLUME_PRICE_UPPER: parseFloat(process.env.VOLUME_PRICE_MARGIN_UPPER!),
+    VOLUME_PRICE_CANDLE_HEIGHT: parseFloat(process.env.VOLUME_PRICE_CANDLE_HEIGHT!),
     UPDATE_INTERVAL_MS: parseInt(process.env.UPDATE_INTERVAL_MS!),
 };
 
