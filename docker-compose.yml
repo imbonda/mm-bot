@@ -22,6 +22,7 @@ services:
     environment:
       <<: *prod-env-variables
       
+      APP_NAME: mm-bot
       SERVICE_NAME: bingx-mm-bot
       EXCHANGE_NAME: bingx
       ORACLE_EXCHANGE_NAME: bybit
