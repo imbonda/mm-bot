@@ -2,12 +2,12 @@
 import { tradingConfig } from '@/config';
 import { OrderBook } from '@/dto';
 import { OrderSide, OrderType } from '@/dto/order';
-import { bingx } from '@/lib/exchanges';
+import { exchange } from '@/lib/exchanges';
 import { getRandomInRange } from '@/lib/utils/utils';
 import { Trader } from '@/traders/trader';
 
 export class VolumeTrader extends Trader {
-    private bingxPairSymbol: string;
+    private symbol: string;
 
     private orderBookDepth: number;
 
@@ -21,7 +21,7 @@ export class VolumeTrader extends Trader {
 
     constructor() {
         super();
-        this.bingxPairSymbol = tradingConfig.SYMBOL;
+        this.symbol = tradingConfig.SYMBOL;
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
         this.amountDecimals = tradingConfig.AMOUNT_DECIMALS;
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
@@ -30,7 +30,7 @@ export class VolumeTrader extends Trader {
     }
 
     public async addVolume(): Promise<void> {
-        const orderBook = await bingx.getOrderBook(this.bingxPairSymbol, this.orderBookDepth);
+        const orderBook = await exchange.getOrderBook(this.symbol, this.orderBookDepth);
         await this._addVolume(orderBook);
     }
 
@@ -45,16 +45,16 @@ export class VolumeTrader extends Trader {
         const price = orderPrice.toFixed(this.priceDecimals);
         const orderAmount = getRandomInRange(this.minTradeAmount, this.maxTradeAmount);
         const amount = orderAmount.toFixed(this.amountDecimals);
-        bingx.placeMultipleOrders([
+        exchange.placeMultipleOrders([
             {
-                symbol: this.bingxPairSymbol,
+                symbol: this.symbol,
                 price,
                 amount,
                 side: OrderSide.ASK,
                 type: OrderType.LIMIT,
             },
             {
-                symbol: this.bingxPairSymbol,
+                symbol: this.symbol,
                 price,
                 amount,
                 side: OrderSide.BID,

@@ -3,14 +3,14 @@ import { Order } from '@/@types';
 import { tradingConfig } from '@/config';
 import { AccountBalance, PendingOrder, Ticker } from '@/dto';
 import { OrderSide, OrderType } from '@/dto/order';
-import { bingx, bybit } from '@/lib/exchanges';
+import { exchange, oracle } from '@/lib/exchanges';
 import { getRandomInRange, randomSplit } from '@/lib/utils/utils';
 import { Trader } from '@/traders/trader';
 
 export class SpreadTrader extends Trader {
-    private bybitPairSymbol: string;
+    private symbol: string;
 
-    private bingxPairSymbol: string;
+    private oracleSymbol: string;
 
     private orderBookDepth: number;
 
@@ -32,8 +32,8 @@ export class SpreadTrader extends Trader {
 
     constructor() {
         super();
-        this.bybitPairSymbol = tradingConfig.ORACLE_SYMBOL;
-        this.bingxPairSymbol = tradingConfig.SYMBOL;
+        this.symbol = tradingConfig.SYMBOL;
+        this.oracleSymbol = tradingConfig.ORACLE_SYMBOL;
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
         this.amountDecimals = tradingConfig.AMOUNT_DECIMALS;
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
@@ -51,9 +51,9 @@ export class SpreadTrader extends Trader {
             openOrders,
             accountBalance,
         ] = await Promise.all([
-            bybit.getLastTicker(this.bybitPairSymbol),
-            bingx.getOpenOrders(this.bingxPairSymbol),
-            bingx.getAccountBalance(),
+            oracle.getLastTicker(this.oracleSymbol),
+            exchange.getOpenOrders(this.symbol),
+            exchange.getAccountBalance(),
         ]);
 
         await this._fixSpread(oracleTicker, openOrders, accountBalance);
@@ -67,7 +67,7 @@ export class SpreadTrader extends Trader {
         this.logger.info('starting to fix spread');
         this.logger.info('Account balance', accountBalance.balances);
 
-        const { base, quote } = bingx.parseSymbol(this.bingxPairSymbol);
+        const { base, quote } = exchange.parseSymbol(this.symbol);
         const openAsks = openOrders.filter((order) => order.side === OrderSide.ASK);
         const openBids = openOrders.filter((order) => order.side === OrderSide.BID);
         const baseAssetBalance = accountBalance.getBalance(base)?.free ?? 0;
@@ -97,8 +97,8 @@ export class SpreadTrader extends Trader {
         );
 
         await Promise.all([
-            bingx.cancelMultipleOrders([...removeAskOrders, ...removeBidOrders]),
-            bingx.placeMultipleOrders([...newAskOrders, ...newBidOrders]),
+            exchange.cancelMultipleOrders([...removeAskOrders, ...removeBidOrders]),
+            exchange.placeMultipleOrders([...newAskOrders, ...newBidOrders]),
         ]);
 
         this.logger.info('finished to fix spread');
@@ -132,7 +132,7 @@ export class SpreadTrader extends Trader {
         newOrdersAmounts.forEach((amount, index) => {
             const price = newOrdersPrices[index];
             newOrders.push({
-                symbol: this.bingxPairSymbol,
+                symbol: this.symbol,
                 price: price.toFixed(this.priceDecimals),
                 amount: amount.toFixed(this.amountDecimals),
                 side,

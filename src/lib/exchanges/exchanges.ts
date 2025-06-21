@@ -16,3 +16,6 @@ export const bybit = new BybitClient({
     apiSecret: exchangeConfig.bybit.API_SECRET,
     apiTimeout: exchangeConfig.bybit.API_TIMEOUT_MS,
 });
+
+export const exchange = bingx;
+export const oracle = bybit;
