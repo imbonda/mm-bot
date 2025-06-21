@@ -22,9 +22,9 @@ export class SpreadTrader extends Trader {
 
     private spreadPriceHighEnd: number;
 
-    private minBaseAssetTradeAmount: number;
+    private minBaseAssetTradeValue: number;
 
-    private minQuoteAssetTradeAmount: number;
+    private minQuoteAssetTradeValue: number;
 
     private baseAssetBudgetRatio: number;
 
@@ -39,8 +39,8 @@ export class SpreadTrader extends Trader {
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
         this.spreadPriceLowEnd = tradingConfig.SPREAD_PRICE_LOW_END;
         this.spreadPriceHighEnd = tradingConfig.SPREAD_PRICE_HIGH_END;
-        this.minBaseAssetTradeAmount = tradingConfig.SPREAD_MIN_BASE_AMOUNT;
-        this.minQuoteAssetTradeAmount = tradingConfig.SPREAD_MIN_QUOTE_AMOUNT;
+        this.minBaseAssetTradeValue = tradingConfig.SPREAD_MIN_BASE_VALUE;
+        this.minQuoteAssetTradeValue = tradingConfig.SPREAD_MIN_QUOTE_VALUE;
         this.baseAssetBudgetRatio = tradingConfig.SPREAD_BASE_BUDGET_RATIO;
         this.quoteAssetBudgetRatio = tradingConfig.SPREAD_QUOTE_BUDGET_RATIO;
     }
@@ -81,7 +81,7 @@ export class SpreadTrader extends Trader {
         } = this.getOrderBookFixes(
             targetPrice,
             baseAssetBudget,
-            this.minBaseAssetTradeAmount,
+            this.minBaseAssetTradeValue,
             OrderSide.ASK,
             openAsks,
         );
@@ -91,7 +91,7 @@ export class SpreadTrader extends Trader {
         } = this.getOrderBookFixes(
             targetPrice,
             quoteAssetBudget,
-            this.minQuoteAssetTradeAmount,
+            this.minQuoteAssetTradeValue,
             OrderSide.BID,
             openBids,
         );
@@ -107,7 +107,7 @@ export class SpreadTrader extends Trader {
     private getOrderBookFixes(
         targetPrice: number,
         budget: number,
-        minAmount: number,
+        minValue: number,
         side: OrderSide,
         orders: PendingOrder[],
     ): { newOrders: Order[]; removeOrders: PendingOrder[] } {
@@ -128,9 +128,12 @@ export class SpreadTrader extends Trader {
 
         // Generate new orders.
         const newOrders: Order[] = [];
-        const newOrdersAmounts = randomSplit(budget, newOrdersPrices.length, minAmount);
-        newOrdersAmounts.forEach((amount, index) => {
+        const newOrdersValues = randomSplit(budget, newOrdersPrices.length, minValue);
+        newOrdersValues.forEach((value, index) => {
             const price = newOrdersPrices[index];
+            const amount = (side === OrderSide.ASK)
+                ? value
+                : value / price;
             newOrders.push({
                 symbol: this.symbol,
                 price: price.toFixed(this.priceDecimals),
