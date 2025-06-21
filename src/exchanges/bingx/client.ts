@@ -13,6 +13,7 @@ import { Logger } from '@/lib/logger';
 import { createUUID, encodeURLParams, withTimeout } from '@/lib/utils/utils';
 import { authenticate } from '@/exchanges/bingx/hooks/auth';
 import { encodeData } from '@/exchanges/bingx/hooks/encode';
+import { transformResponse } from '@/exchanges/bingx/hooks/parse';
 
 interface APIResponse {
     code: number;
@@ -351,17 +352,7 @@ export class BingXClient {
         const request = axios({
             url,
             ...reqInit,
-
-            /**
-             * @important Fixing "orderId" precission issue.
-             */
-            transformResponse: (res) => {
-                if (res.includes('"orderId"')) {
-                    // Replace large orderId numbers with quoted strings
-                    res = res.replace(/"orderId":\s*(\d{16,})/g, '"orderId":"$1"');
-                }
-                return res;
-            },
+            transformResponse,
         } as AxiosRequestConfig);
         const res = await withTimeout(request, this.timeout);
         this.logger.debug('Response headers', { path, headers: res.headers });

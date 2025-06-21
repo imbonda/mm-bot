@@ -30,7 +30,7 @@ export class VolumeTrader extends Trader {
     }
 
     public async addVolume(): Promise<void> {
-        const orderBook = await bingx.getOrderBook(this.bingxPairSymbol, this.orderBookDepth),;
+        const orderBook = await bingx.getOrderBook(this.bingxPairSymbol, this.orderBookDepth);
         await this._addVolume(orderBook);
     }
 
