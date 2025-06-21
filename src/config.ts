@@ -51,14 +51,16 @@ export const tradingConfig = {
     ORDER_BOOK_DEPTH: parseInt(process.env.ORDER_BOOK_DEPTH!),
     AMOUNT_DECIMALS: parseInt(process.env.AMOUNT_DECIMALS_PRECISION!),
     PRICE_DECIMALS: parseInt(process.env.PRICE_DECIMALS_PRECISION!),
-    SPREAD_LOW_END: parseFloat(process.env.SPREAD_LOW_END_MARGIN!),
-    SPREAD_HIGH_END: parseFloat(process.env.SPREAD_HIGH_END_MARGIN!),
+    SPREAD_PRICE_LOW_END: parseFloat(process.env.SPREAD_PRICE_LOW_END_MARGIN!),
+    SPREAD_PRICE_HIGH_END: parseFloat(process.env.SPREAD_PRICE_HIGH_END_MARGIN!),
     SPREAD_MIN_BASE_AMOUNT: parseFloat(process.env.SPREAD_MIN_BASE_ASSET_TRADE_AMOUNT!),
     SPREAD_MIN_QUOTE_AMOUNT: parseFloat(process.env.SPREAD_MIN_QUOTE_ASSET_TRADE_AMOUNT!),
     SPREAD_BASE_BUDGET_RATIO: parseFloat(process.env.SPREAD_BASE_ASSET_BUDGET_RATIO!),
     SPREAD_QUOTE_BUDGET_RATIO: parseFloat(process.env.SPREAD_QUOTE_ASSET_BUDGET_RATIO!),
     VOLUME_MIN_AMOUNT: parseInt(process.env.VOLUME_MIN_TRADE_AMOUNT!),
     VOLUME_MAX_AMOUNT: parseInt(process.env.VOLUME_MAX_TRADE_AMOUNT!),
+    VOLUME_PRICE_LOWER: parseFloat(process.env.VOLUME_PRICE_MARGIN_LOWER!),
+    VOLUME_PRICE_UPPER: parseFloat(process.env.VOLUME_PRICE_MARGIN_UPPER!),
     UPDATE_INTERVAL_MS: parseInt(process.env.UPDATE_INTERVAL_MS!),
 };
 

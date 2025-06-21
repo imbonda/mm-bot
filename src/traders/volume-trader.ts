@@ -19,6 +19,10 @@ export class VolumeTrader extends Trader {
 
     private maxTradeAmount: number;
 
+    private priceMarginLower: number;
+
+    private priceMarginUpper: number;
+
     constructor() {
         super();
         this.symbol = tradingConfig.SYMBOL;
@@ -27,6 +31,8 @@ export class VolumeTrader extends Trader {
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
         this.minTradeAmount = tradingConfig.VOLUME_MIN_AMOUNT;
         this.maxTradeAmount = tradingConfig.VOLUME_MAX_AMOUNT;
+        this.priceMarginLower = tradingConfig.VOLUME_PRICE_LOWER;
+        this.priceMarginUpper = tradingConfig.VOLUME_PRICE_UPPER;
     }
 
     public async addVolume(): Promise<void> {
@@ -41,7 +47,9 @@ export class VolumeTrader extends Trader {
 
         const [askPrice] = orderBook.bestAsk;
         const [bidPrice] = orderBook.bestBid;
-        const orderPrice = (askPrice + bidPrice) / 2;
+        const lowerPrice = bidPrice + (askPrice - bidPrice) * this.priceMarginLower;
+        const upperPrice = bidPrice + (askPrice - bidPrice) * this.priceMarginUpper;
+        const orderPrice = getRandomInRange(lowerPrice, upperPrice);
         const price = orderPrice.toFixed(this.priceDecimals);
         const orderAmount = getRandomInRange(this.minTradeAmount, this.maxTradeAmount);
         const amount = orderAmount.toFixed(this.amountDecimals);

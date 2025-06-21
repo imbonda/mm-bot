@@ -18,9 +18,9 @@ export class SpreadTrader extends Trader {
 
     private priceDecimals: number;
 
-    private spreadLowEnd: number;
+    private spreadPriceLowEnd: number;
 
-    private spreadHighEnd: number;
+    private spreadPriceHighEnd: number;
 
     private minBaseAssetTradeAmount: number;
 
@@ -37,8 +37,8 @@ export class SpreadTrader extends Trader {
         this.orderBookDepth = tradingConfig.ORDER_BOOK_DEPTH;
         this.amountDecimals = tradingConfig.AMOUNT_DECIMALS;
         this.priceDecimals = tradingConfig.PRICE_DECIMALS;
-        this.spreadLowEnd = tradingConfig.SPREAD_LOW_END;
-        this.spreadHighEnd = tradingConfig.SPREAD_HIGH_END;
+        this.spreadPriceLowEnd = tradingConfig.SPREAD_PRICE_LOW_END;
+        this.spreadPriceHighEnd = tradingConfig.SPREAD_PRICE_HIGH_END;
         this.minBaseAssetTradeAmount = tradingConfig.SPREAD_MIN_BASE_AMOUNT;
         this.minQuoteAssetTradeAmount = tradingConfig.SPREAD_MIN_QUOTE_AMOUNT;
         this.baseAssetBudgetRatio = tradingConfig.SPREAD_BASE_BUDGET_RATIO;
@@ -149,8 +149,8 @@ export class SpreadTrader extends Trader {
         side: OrderSide,
     ): [number, number][] {
         const sign: number = (side === OrderSide.ASK) ? 1 : -1;
-        const lowEnd = basePrice * (1 + sign * (this.spreadLowEnd / 2));
-        const highEnd = basePrice * (1 + sign * (this.spreadHighEnd / 2));
+        const lowEnd = basePrice * (1 + sign * (this.spreadPriceLowEnd / 2));
+        const highEnd = basePrice * (1 + sign * (this.spreadPriceHighEnd / 2));
         const rangeSize = Math.abs(highEnd - lowEnd) / numOrders;
         const ranges: [number, number][] = Array.from({ length: numOrders }, (_, i) => {
             const low = lowEnd + sign * rangeSize * i;
