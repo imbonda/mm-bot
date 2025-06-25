@@ -67,7 +67,11 @@ export function createUUID(length = 32): string {
 /**
  * Generate random number in the full open range (start, end).
  */
-export function getRandomInRange(start: number, end: number) {
+export function getRandomInRange(start: number, end: number): number {
+    if (start === end) {
+        return null;
+    }
+
     let rand: number;
     do {
         rand = start + Math.random() * (end - start);
