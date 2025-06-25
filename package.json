@@ -1,7 +1,7 @@
 {
   "name": "mm-bot",
   "type": "commonjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "node": "~18.18.2",
     "npm": "9.8.1"

@@ -40,4 +40,8 @@ export class PendingOrder {
         const [start, end] = range;
         return (start <= this.price) && (this.price) <= end;
     }
+
+    public compare(other: this): number {
+        return this.price - other.price;
+    }
 }

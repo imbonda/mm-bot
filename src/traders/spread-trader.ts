@@ -68,12 +68,18 @@ export class SpreadTrader extends Trader {
         this.logger.info('Account balance', accountBalance.balances);
 
         const { base, quote } = exchange.parseSymbol(this.symbol);
-        const openAsks = openOrders.filter((order) => order.side === OrderSide.ASK);
-        const openBids = openOrders.filter((order) => order.side === OrderSide.BID);
-        const baseAssetBalance = accountBalance.getBalance(base)?.free ?? 0;
-        const quoteAssetBalance = accountBalance.getBalance(quote)?.free ?? 0;
-        const baseAssetBudget = baseAssetBalance * this.baseAssetBudgetRatio;
-        const quoteAssetBudget = quoteAssetBalance * this.quoteAssetBudgetRatio;
+        const openAsks = openOrders
+            .filter((order) => order.side === OrderSide.ASK)
+            .sort((a, b) => a.compare(b));
+        const openBids = openOrders
+            .filter((order) => order.side === OrderSide.BID)
+            .sort((a, b) => b.compare(a));
+        const baseTotalBalance = accountBalance.getBalance(base)?.total ?? 0;
+        const baseFreeBalance = accountBalance.getBalance(base)?.free ?? 0;
+        const quoteTotalBalance = accountBalance.getBalance(quote)?.total ?? 0;
+        const quoteFreeBalance = accountBalance.getBalance(quote)?.free ?? 0;
+        const baseAssetBudget = baseFreeBalance - baseTotalBalance * this.baseAssetBudgetRatio;
+        const quoteAssetBudget = quoteFreeBalance - quoteTotalBalance * this.quoteAssetBudgetRatio;
         const targetPrice = oracleTicker.lastPrice;
         const {
             newOrders: newAskOrders,
@@ -111,6 +117,14 @@ export class SpreadTrader extends Trader {
         side: OrderSide,
         orders: PendingOrder[],
     ): { newOrders: Order[]; removeOrders: PendingOrder[] } {
+        if (budget < 0) {
+            // In case of insufficient budget, remove orders from the back of the book.
+            return {
+                newOrders: [],
+                removeOrders: orders.slice(-orders.length / 2),
+            };
+        }
+
         const removeOrders: Set<PendingOrder> = new Set(orders);
 
         // Generate prices for new orders.
