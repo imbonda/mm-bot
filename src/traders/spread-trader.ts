@@ -116,7 +116,7 @@ export class SpreadTrader extends Trader {
         orders: PendingOrder[],
     ): { newOrders: Order[]; removeOrders: PendingOrder[] } {
         let exceedingOrders: Set<PendingOrder> = new Set();
-        if (budget < 0) {
+        if (budget < minValue) {
             // In case of insufficient budget, remove orders from the back of the book.
             exceedingOrders = new Set(orders.slice(-orders.length / 2));
         }
