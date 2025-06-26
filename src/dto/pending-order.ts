@@ -21,6 +21,8 @@ export class PendingOrder {
 
     public filledAmount: number;
 
+    public remainingAmount: number;
+
     public time: number;
 
     constructor(order: IPendingOrder) {
@@ -33,6 +35,7 @@ export class PendingOrder {
         this.price = parseFloat(order.price);
         this.origAmount = parseFloat(order.origAmount);
         this.filledAmount = parseFloat(order.filledAmount);
+        this.remainingAmount = this.origAmount - this.filledAmount;
         this.time = order.time;
     }
 

@@ -102,10 +102,8 @@ export class SpreadTrader extends Trader {
             openBids,
         );
 
-        await Promise.all([
-            exchange.cancelMultipleOrders([...removeAskOrders, ...removeBidOrders]),
-            exchange.placeMultipleOrders([...newAskOrders, ...newBidOrders]),
-        ]);
+        await exchange.cancelMultipleOrders([...removeAskOrders, ...removeBidOrders]);
+        await exchange.placeMultipleOrders([...newAskOrders, ...newBidOrders]);
 
         this.logger.info('finished to fix spread');
     }
@@ -137,6 +135,12 @@ export class SpreadTrader extends Trader {
             }
             const price = getRandomInRange(...range);
             newOrdersPrices.push(price);
+        });
+
+        removeOrders.forEach((order) => {
+            budget += (side === OrderSide.ASK)
+                ? order.remainingAmount
+                : order.remainingAmount * order.price;
         });
 
         // Generate new orders.
