@@ -117,12 +117,9 @@ export class SpreadTrader extends Trader {
         side: OrderSide,
         orders: PendingOrder[],
     ): { newOrders: Order[]; removeOrders: PendingOrder[] } {
+        let exceedingOrders: Set<PendingOrder> = new Set();
         if (budget < 0) {
-            // In case of insufficient budget, remove orders from the back of the book.
-            return {
-                newOrders: [],
-                removeOrders: orders.slice(-orders.length / 2),
-            };
+            exceedingOrders = new Set(orders.slice(-orders.length / 2));
         }
 
         const removeOrders: Set<PendingOrder> = new Set(orders);
@@ -132,7 +129,8 @@ export class SpreadTrader extends Trader {
         const priceRanges = this.generateOrdersPriceRanges(targetPrice, this.orderBookDepth, side);
         priceRanges.forEach((range) => {
             const found: PendingOrder = orders.find((order) => order.isPriceInRange(range));
-            if (found) {
+            const isExceeding: boolean = exceedingOrders.has(found);
+            if (!!found && !isExceeding) {
                 removeOrders.delete(found);
                 return;
             }
