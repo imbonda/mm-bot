@@ -19,7 +19,7 @@ export class MarketMaker extends Service {
     }
 
     public async start(): Promise<void> {
-        this.runPeriodically();
+        await this.runPeriodically();
     }
 
     protected async runPeriodically(): Promise<void> {
